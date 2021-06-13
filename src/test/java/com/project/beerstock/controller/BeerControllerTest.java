@@ -16,11 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
+import java.util.Collections;
+
 import static com.project.beerstock.utils.JsonConvertionUtils.asJsonString;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,6 +32,7 @@ public class BeerControllerTest {
     private static final Long VALID_BEER_ID = 1L;
     private static final Long INVALID_BEER_ID = 2L;
     private static final String BEER_API_SUBPATH_INCREMENT_URL = "/increment";
+    private static final String BEER_API_SUBPATH_DECREMENT_URL = "/decrement";
 
     private MockMvc mockMvc;
 
@@ -109,6 +111,59 @@ public class BeerControllerTest {
         mockMvc.perform(get(BEER_API_URL_PATH + "/" + beerDTO.getName())
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(asJsonString(beerDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenGetListWithBeersIsCalledWithValidNameThenOkStatusIsReturned() throws Exception {
+        //given
+        BeerDTO beerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+
+        //when
+        when(beerService.listAll()).thenReturn(Collections.singletonList(beerDTO));
+
+        //then
+        mockMvc.perform(get(BEER_API_URL_PATH)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(asJsonString(beerDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name", is(beerDTO.getName())))
+                .andExpect(jsonPath("$[0].brand", is(beerDTO.getBrand())))
+                .andExpect(jsonPath("$[0].type", is(beerDTO.getType().toString())));
+    }
+
+    @Test
+    void whenGetListWithoutBeersIsCalledWithValidNameThenOkStatusIsReturned() throws Exception {
+        //given
+        BeerDTO beerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+
+        //when
+        when(beerService.listAll()).thenReturn(Collections.singletonList(beerDTO));
+
+        //then
+        mockMvc.perform(get(BEER_API_URL_PATH)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(asJsonString(beerDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void whenDeleteIsCalledWithValidIdThenNoContentStatusIsReturned() throws Exception {
+        doNothing().when(beerService).deleteById(VALID_BEER_ID);
+
+        mockMvc.perform(delete(BEER_API_URL_PATH + "/" + VALID_BEER_ID)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        verify(beerService, times(1)).deleteById(VALID_BEER_ID);
+    }
+
+    @Test
+    void whenDeleteIsCalledWithoutValidIdThenNotFoundStatusIsReturned() throws Exception {
+        doThrow(BeerNotFoundException.class).when(beerService).deleteById(INVALID_BEER_ID);
+
+        mockMvc.perform(delete(BEER_API_URL_PATH + "/" + INVALID_BEER_ID)
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 }
