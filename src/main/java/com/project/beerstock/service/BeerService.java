@@ -7,7 +7,7 @@ import com.project.beerstock.exceptions.BeerNotFoundException;
 import com.project.beerstock.exceptions.BeerStockExceededException;
 import com.project.beerstock.mapper.BeerMapper;
 import com.project.beerstock.repository.BeerRepository;
-import lombok.AllArgsConstructor;
+import lombok.AllArgsConstructor;   
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
